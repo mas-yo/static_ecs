@@ -1,8 +1,12 @@
 [package]
-name = "static-ecs"
+name = "static_ecs"
 version = "0.1.0"
 authors = ["Masahiro Yoshida <mypianoplayer@gmail.com>"]
 edition = "2018"
+description = "static entity-component system"
+license-file = "LICENSE"
+repository = "https://github.com/mas-yo/static_ecs"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
