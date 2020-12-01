@@ -1,22 +1,20 @@
 #[macro_use]
-mod typeset;
+pub mod typeset;
 
-mod component;
+pub mod component;
 
 #[macro_export]
 macro_rules! world {
     ( $i:ident { $($t:ty),+ $(,)? } ) => {
-        use crate::component::{EntityID, ComponentContainer};
-
-        typeset!{ Components { $( ComponentContainer<$t> ),+ } }
-        type $i = (EntityID, Components);
+        typeset!{ Components { $( component::CContainer<$t> ),+ } }
+        type $i = (component::EntityID, Components);
         pub trait PushComponent<C> {
             fn push_component(&mut self, component: C);
         }
         $(
             impl PushComponent<$t> for $i {
                 fn push_component(&mut self, component: $t) {
-                    TypeRefMut::<ComponentContainer<$t>>::type_ref_mut(&mut self.1).push(self.0, component);
+                    TypeRefMut::<component::CContainer<$t>>::type_ref_mut(&mut self.1).push(self.0, component);
                 }
             }
         )+
@@ -35,53 +33,62 @@ macro_rules! add_entity {
 
 #[macro_export]
 macro_rules! system {
-    ( $world:expr; $typ:ty ; $lambda:expr) => {
-        let mut output = Vec::<(EntityID, $typ)>::new();
-        TypeRef::<ComponentContainer<$typ>>::type_ref(&$world.1)
-            .iter()
-            .map($lambda)
-            .for_each(|(eid, data)| {
-                output.push((eid, data));
-            });
-        let update = TypeRefMut::<ComponentContainer<$typ>>::type_ref_mut(&mut $world.1);
+    ( $world:expr, |$id:ident : & $typ:ty| $b:block ) => {
+        let output: Vec<(component::EntityID, $typ)> =
+            typeref!($world.1, component::CContainer<$typ>)
+                .iter()
+                .map(|(eid, data)| {
+                    let new_data: $typ = (|$id: &$typ| $b)(data);
+                    (eid, new_data)
+                })
+                .collect();
+
+        let update = typerefmut!($world.1, component::CContainer<$typ>);
         for (eid, data) in output {
             if let Some(d) = update.get_mut(eid) {
                 *d = data;
             }
         }
     };
-    ( $world:expr; $typ1:ty; $typ2:ty ; $lambda:expr) => {
-        let mut output = Vec::<(EntityID, $typ1)>::new();
-        TypeRef::<ComponentContainer<$typ1>>::type_ref(&$world.1)
-            .iter()
-            .zip_entity(TypeRef::<ComponentContainer<$typ2>>::type_ref(&$world.1))
-            .map($lambda)
-            .for_each(|(eid, data)| {
-                output.push((eid, data));
-            });
-        let update = TypeRefMut::<ComponentContainer<$typ1>>::type_ref_mut(&mut $world.1);
-        for (eid, data) in output {
+    ( $world:expr, | $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty | $b:block ) => {
+        let output: Vec<(component::EntityID, $typ1)> =
+            typeref!($world.1, component::CContainer<$typ1>)
+                .iter()
+                .zip_entity(typeref!($world.1, component::CContainer<$typ2>))
+                .map(
+                    |(eid, data1, data2): (component::EntityID, &$typ1, &$typ2)| {
+                        let new_data: $typ1 = (|$id1: &$typ1, $id2: &$typ2| $b)(data1, data2);
+                        (eid, new_data)
+                    },
+                )
+                .collect();
+
+        let update = typerefmut!($world.1, component::CContainer<$typ1>);
+        for (eid, new_data) in output {
             if let Some(d) = update.get_mut(eid) {
-                *d = data;
+                *d = new_data;
             }
         }
     };
-    ( $world:expr; $typ1:ty; $typ2:ty, $typ3:ty ; $lambda:expr) => {
-        let mut output = Vec::<(EntityID, $typ1)>::new();
-        TypeRef::<ComponentContainer<$typ1>>::type_ref(&$world.1)
-            .iter()
-            .zip_entity2(
-                TypeRef::<ComponentContainer<$typ2>>::type_ref(&$world.1),
-                TypeRef::<ComponentContainer<$typ3>>::type_ref(&$world.1),
-            )
-            .map($lambda)
-            .for_each(|(eid, data)| {
-                output.push((eid, data));
-            });
-        let update = TypeRefMut::<ComponentContainer<$typ1>>::type_ref_mut(&mut $world.1);
-        for (eid, data) in output {
+    ( $world:expr, | $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty, $id3:ident : & $typ3:ty | $b:block) => {
+        let output: Vec<(component::EntityID, $typ1)> =
+            typeref!($world.1, component::CContainer<$typ1>)
+                .iter()
+                .zip_entity2(
+                    typeref!($world.1, component::CContainer<$typ2>),
+                    typeref!($world.1, component::CContainer<$typ3>),
+                )
+                .map(|(eid, data1, data2, data3)| {
+                    let new_data: $typ1 =
+                        (|$id1: &$typ1, $id2: &$typ2, $id3: &$typ3| $b)(data1, data2, data3);
+                    (eid, new_data)
+                })
+                .collect();
+
+        let update = typerefmut!($world.1, component::CContainer<$typ1>);
+        for (eid, new_data) in output {
             if let Some(d) = update.get_mut(eid) {
-                *d = data;
+                *d = new_data;
             }
         }
     };
@@ -89,6 +96,8 @@ macro_rules! system {
 
 #[cfg(test)]
 mod tests {
+
+    use crate::*;
     world! {
         World {
             i32,
@@ -101,6 +110,9 @@ mod tests {
     fn it_works() {
         let mut a = World::default();
         add_entity!(a; 1i32, 1f32);
-        system!( a; i32; f32, u32; |(_,i,f,u)|{ (1,*i) });
+        system!(a, |i: &i32| {
+            *i;
+            1
+        });
     }
 }
