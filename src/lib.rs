@@ -1,7 +1,6 @@
 #[macro_use]
 mod typeset;
 
-
 mod component;
 
 #[macro_export]
@@ -38,9 +37,12 @@ macro_rules! add_entity {
 macro_rules! system {
     ( $world:expr; $typ:ty ; $lambda:expr) => {
         let mut output = Vec::<(EntityID, $typ)>::new();
-        TypeRef::<ComponentContainer<$typ>>::type_ref(&$world.1).iter().map($lambda).for_each(|(eid,data)|{
-            output.push((eid, data));
-        });
+        TypeRef::<ComponentContainer<$typ>>::type_ref(&$world.1)
+            .iter()
+            .map($lambda)
+            .for_each(|(eid, data)| {
+                output.push((eid, data));
+            });
         let update = TypeRefMut::<ComponentContainer<$typ>>::type_ref_mut(&mut $world.1);
         for (eid, data) in output {
             if let Some(d) = update.get_mut(eid) {
@@ -50,12 +52,13 @@ macro_rules! system {
     };
     ( $world:expr; $typ1:ty; $typ2:ty ; $lambda:expr) => {
         let mut output = Vec::<(EntityID, $typ1)>::new();
-        TypeRef::<ComponentContainer<$typ1>>::type_ref(&$world.1).iter()
-        .zip_entity(TypeRef::<ComponentContainer<$typ2>>::type_ref(&$world.1))
-        .map($lambda)
-        .for_each(|(eid,data)|{
-            output.push((eid, data));
-        });
+        TypeRef::<ComponentContainer<$typ1>>::type_ref(&$world.1)
+            .iter()
+            .zip_entity(TypeRef::<ComponentContainer<$typ2>>::type_ref(&$world.1))
+            .map($lambda)
+            .for_each(|(eid, data)| {
+                output.push((eid, data));
+            });
         let update = TypeRefMut::<ComponentContainer<$typ1>>::type_ref_mut(&mut $world.1);
         for (eid, data) in output {
             if let Some(d) = update.get_mut(eid) {
@@ -65,12 +68,16 @@ macro_rules! system {
     };
     ( $world:expr; $typ1:ty; $typ2:ty, $typ3:ty ; $lambda:expr) => {
         let mut output = Vec::<(EntityID, $typ1)>::new();
-        TypeRef::<ComponentContainer<$typ1>>::type_ref(&$world.1).iter()
-        .zip_entity2(TypeRef::<ComponentContainer<$typ2>>::type_ref(&$world.1), TypeRef::<ComponentContainer<$typ3>>::type_ref(&$world.1))
-        .map($lambda)
-        .for_each(|(eid,data)|{
-            output.push((eid, data));
-        });
+        TypeRef::<ComponentContainer<$typ1>>::type_ref(&$world.1)
+            .iter()
+            .zip_entity2(
+                TypeRef::<ComponentContainer<$typ2>>::type_ref(&$world.1),
+                TypeRef::<ComponentContainer<$typ3>>::type_ref(&$world.1),
+            )
+            .map($lambda)
+            .for_each(|(eid, data)| {
+                output.push((eid, data));
+            });
         let update = TypeRefMut::<ComponentContainer<$typ1>>::type_ref_mut(&mut $world.1);
         for (eid, data) in output {
             if let Some(d) = update.get_mut(eid) {
@@ -89,7 +96,7 @@ mod tests {
             u32,
         }
     }
-    
+
     #[test]
     fn it_works() {
         let mut a = World::default();

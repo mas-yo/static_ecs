@@ -1,4 +1,3 @@
-
 // #[macro_export]
 macro_rules! inner_typeset {
     ( $t: ty ) => {
@@ -69,13 +68,13 @@ macro_rules! typeset {
 macro_rules! typeref {
     ( $i:ident, $t:ty ) => {
         TypeRef::<$t>::type_ref(&$i)
-    }
+    };
 }
 // #[macro_export]
 macro_rules! typerefmut {
     ( $i:ident, $t:ty ) => {
         TypeRefMut::<$t>::type_ref_mut(&mut $i)
-    }
+    };
 }
 
 // #[test]
