@@ -33,12 +33,12 @@ macro_rules! add_entity {
 
 #[macro_export]
 macro_rules! system {
-    ( $world:expr, |$id:ident : & $typ:ty| $b:block ) => {
+    ( $world:expr, |$entity_id:ident, $id:ident : & $typ:ty| $b:block ) => {
         let output: Vec<(component::EntityID, $typ)> =
             typeref!($world.1, component::CContainer<$typ>)
                 .iter()
                 .map(|(eid, data)| {
-                    let new_data: $typ = (|$id: &$typ| $b)(data);
+                    let new_data: $typ = (|$entity_id, $id: &$typ| $b)(eid, data);
                     (eid, new_data)
                 })
                 .collect();
@@ -50,14 +50,15 @@ macro_rules! system {
             }
         }
     };
-    ( $world:expr, | $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty | $b:block ) => {
+    ( $world:expr, | $entity_id:ident, $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty | $b:block ) => {
         let output: Vec<(component::EntityID, $typ1)> =
             typeref!($world.1, component::CContainer<$typ1>)
                 .iter()
                 .zip_entity(typeref!($world.1, component::CContainer<$typ2>))
                 .map(
                     |(eid, data1, data2): (component::EntityID, &$typ1, &$typ2)| {
-                        let new_data: $typ1 = (|$id1: &$typ1, $id2: &$typ2| $b)(data1, data2);
+                        let new_data: $typ1 =
+                            (|$entity_id, $id1: &$typ1, $id2: &$typ2| $b)(eid, data1, data2);
                         (eid, new_data)
                     },
                 )
@@ -70,7 +71,7 @@ macro_rules! system {
             }
         }
     };
-    ( $world:expr, | $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty, $id3:ident : & $typ3:ty | $b:block) => {
+    ( $world:expr, |$entity_id:ident, $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty, $id3:ident : & $typ3:ty | $b:block) => {
         let output: Vec<(component::EntityID, $typ1)> =
             typeref!($world.1, component::CContainer<$typ1>)
                 .iter()
@@ -80,7 +81,9 @@ macro_rules! system {
                 )
                 .map(|(eid, data1, data2, data3)| {
                     let new_data: $typ1 =
-                        (|$id1: &$typ1, $id2: &$typ2, $id3: &$typ3| $b)(data1, data2, data3);
+                        (|$entity_id, $id1: &$typ1, $id2: &$typ2, $id3: &$typ3| $b)(
+                            eid, data1, data2, data3,
+                        );
                     (eid, new_data)
                 })
                 .collect();
@@ -110,7 +113,7 @@ mod tests {
     fn it_works() {
         let mut a = World::default();
         add_entity!(a; 1i32, 1f32);
-        system!(a, |i: &i32| {
+        system!(a, |eid, i: &i32, f: &f32, u: &u32| {
             *i;
             1
         });
