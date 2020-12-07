@@ -1,22 +1,16 @@
 #[macro_export]
-macro_rules! inner_typeset {
+macro_rules! recursive_tuple {
     ( $t: ty ) => {
         ($t, ())
     };
     ( $th:ty, $( $tt: ty ),+ $(,)? ) => {
-        ($th, inner_typeset!($($tt),+))
+        ($th, recursive_tuple!($($tt),+))
     };
 }
 
 #[macro_export]
-macro_rules! impl_typeset {
+macro_rules! impl_typeref {
     ( $torg:ty, $t: ty ) => {
-        pub trait TypeRef<T> {
-            fn type_ref(&self) -> &T;
-        }
-        pub trait TypeRefMut<T> {
-            fn type_ref_mut(&mut self) -> &mut T;
-        }
         impl TypeRef<$t> for $torg {
             fn type_ref(&self) -> &$t {
                 &self.0
@@ -53,14 +47,21 @@ macro_rules! impl_typeset {
                 }
             }
         )+
-        impl_typeset!{ inner_typeset!($($tt),+), $($tt),+ }
+        impl_typeref!{ recursive_tuple!($($tt),+), $($tt),+ }
     };
 }
+
 #[macro_export]
 macro_rules! typeset {
     ( $i:ident { $($t:ty),+ $(,)? } ) => {
-        type $i = inner_typeset!($($t),+);
-        impl_typeset!{$i, $($t),+}
+        pub trait TypeRef<T> {
+            fn type_ref(&self) -> &T;
+        }
+        pub trait TypeRefMut<T> {
+            fn type_ref_mut(&mut self) -> &mut T;
+        }
+        type $i = recursive_tuple!($($t),+);
+        impl_typeref!{$i, $($t),+}
     }
 }
 
@@ -76,15 +77,3 @@ macro_rules! typerefmut {
         TypeRefMut::<$t>::type_ref_mut(&mut $e)
     };
 }
-
-// #[test]
-// fn test() {
-
-//     typeset!(World { i32, f32, u32 });
-//     {
-//     let mut w = World::default();
-//     let b:&f32 = w.type_ref();
-//     let a:&mut i32 = w.type_ref_mut();
-//     *a = *b as i32;
-//     }
-// }
