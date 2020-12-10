@@ -1,6 +1,17 @@
 use std::collections::HashMap;
 
-pub type EntityID = u32;
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Default)]
+pub struct EntityID {
+    id: u32,
+}
+impl EntityID {
+    pub fn new() -> Self {
+        Self { id: 0 }
+    }
+    pub fn next(&self) -> Self {
+        Self { id: self.id + 1 }
+    }
+}
 
 pub struct Component<T> {
     entity_id: EntityID,

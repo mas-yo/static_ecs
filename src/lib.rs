@@ -41,7 +41,7 @@ macro_rules! add_entity {
         $(
             $i.push_component($e);
         )+
-        $i.0 += 1;
+        $i.0 = $i.0.next();
     };
 }
 
