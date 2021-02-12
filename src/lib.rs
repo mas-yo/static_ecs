@@ -2,14 +2,27 @@
 pub mod typeset;
 
 pub mod component;
+use component::ID;
+
+impl component::ID for u32 {
+    fn next(&self) -> Self {
+        self + 1
+    }
+}
+
+pub type EntityID = u32;
+pub type CC<T> = component::CContainer<EntityID, T>;
 
 #[macro_export]
 macro_rules! world {
     ( $i:ident { $($t:ty),+ $(,)? } ) => {
-        typeset!{ Components { $( component::CContainer<$t> ),+ } }
-        type $i = (component::EntityID, Components);
+        typeset!{ Components { $( CC<$t> ),+ } }
+        type $i = (EntityID, Components);
         pub trait PushComponent<C> {
             fn push_component(&mut self, component: C);
+        }
+        pub trait RemoveComponent {
+            fn remove_component(&mut self, entity_id: EntityID);
         }
         $(
             impl PushComponent<$t> for $i {
@@ -18,20 +31,27 @@ macro_rules! world {
                 }
             }
         )+
+        impl RemoveComponent for $i {
+            fn remove_component(&mut self, entity_id: EntityID) {
+                $(
+                    component_mut!(self, $t).remove(entity_id);
+                )+
+            }
+        }
     };
 }
 
 #[macro_export]
 macro_rules! component {
     ( $world:expr, $t:ty ) => {
-        typeref!($world.1, component::CContainer<$t>)
+        typeref!($world.1, CC<$t>)
     };
 }
 
 #[macro_export]
 macro_rules! component_mut {
     ( $world:expr, $t:ty) => {
-        typerefmut!($world.1, component::CContainer<$t>)
+        typerefmut!($world.1, CC<$t>)
     };
 }
 
@@ -48,7 +68,7 @@ macro_rules! add_entity {
 #[macro_export]
 macro_rules! system {
     ( $world:expr, |$entity_id:ident, $id:ident : & $typ:ty| $b:block ) => {
-        let output: Vec<(component::EntityID, $typ)> = component!($world, $typ)
+        let output: Vec<(EntityID, $typ)> = component!($world, $typ)
             .iter()
             .map(|(eid, data)| {
                 let new_data: $typ = (|$entity_id, $id: &$typ| $b)(eid, data);
@@ -64,11 +84,11 @@ macro_rules! system {
         }
     };
     ( $world:expr, | $entity_id:ident, $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty | $b:block ) => {
-        let output: Vec<(component::EntityID, $typ1)> = component!($world, $typ1)
+        let output: Vec<(EntityID, $typ1)> = component!($world, $typ1)
             .iter()
             .zip_entity(component!($world, $typ2))
             .map(
-                |(eid, data1, data2): (component::EntityID, &$typ1, &$typ2)| {
+                |(eid, data1, data2): (EntityID, &$typ1, &$typ2)| {
                     let new_data: $typ1 =
                         (|$entity_id, $id1: &$typ1, $id2: &$typ2| $b)(eid, data1, data2);
                     (eid, new_data)
@@ -84,7 +104,7 @@ macro_rules! system {
         }
     };
     ( $world:expr, |$entity_id:ident, $id1:ident : & $typ1:ty, $id2:ident : & $typ2:ty, $id3:ident : & $typ3:ty | $b:block) => {
-        let output: Vec<(component::EntityID, $typ1)> = component!($world, $typ1)
+        let output: Vec<(EntityID, $typ1)> = component!($world, $typ1)
             .iter()
             .zip_entity2(component!($world, $typ2), component!($world, $typ3))
             .map(|(eid, data1, data2, data3)| {
@@ -108,11 +128,12 @@ macro_rules! system {
 mod tests {
 
     use crate::*;
+
     world! {
         World {
             i32,
             f32,
-            u32,
+            // u32,
         }
     }
 
@@ -120,11 +141,21 @@ mod tests {
     fn it_works() {
         let mut a = World::default();
         add_entity!(a; 1i32, 1f32);
-        let re = component_mut!(a, i32);
-
-        system!(a, |eid, i: &i32, f: &f32, u: &u32| {
-            *i;
+        add_entity!(a; 1i32, 1f32);
+        add_entity!(a; 1i32, 1f32);
+        add_entity!(a; 1i32, 1f32);
+        add_entity!(a; 1i32, 1f32);
+        
+        system!(a, |eid, i: &i32, f: &f32| {
+            println!("{}", eid);
             1
         });
+
+        a.remove_component(2);
+        system!(a, |eid, i: &i32, f: &f32| {
+            println!("{}", eid);
+            1
+        });
+
     }
 }

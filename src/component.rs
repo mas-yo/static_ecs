@@ -1,14 +1,8 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-trait ID {
+pub trait ID {
     fn next(&self) -> Self;
-}
-
-impl ID for u32 {
-    fn next(&self) -> Self {
-        self + 1
-    }
 }
 
 // #[derive(Clone, Copy, Eq, PartialEq, Hash, Default)]
@@ -58,7 +52,7 @@ pub type CContainer<I, T> = ComponentContainer<I, T>;
 // #[derive(Default)]
 pub struct ComponentContainer<I, T> {
     map: HashMap<I, usize>,
-    vec: Vec<Component<I, T>>,
+    vec: Vec<Option<Component<I, T>>>,
 }
 
 impl<I, T> Default for ComponentContainer<I, T>
@@ -78,16 +72,24 @@ where
     I: Copy + Eq + Hash,
 {
     pub fn push(&mut self, entity_id: I, item: T) {
-        self.vec.push(Component::<I, T>::new(entity_id, item));
+        self.vec.push(Some(Component::<I, T>::new(entity_id, item)));
         self.map.insert(entity_id, self.vec.len() - 1);
+    }
+    pub fn remove(&mut self, entity_id: I) {
+        if let Some(index) = self.map.get(&entity_id) {
+            self.vec[*index] = None;
+        }
+        self.map.remove(&entity_id);
     }
     pub fn get(&self, entity_id: I) -> Option<&T> {
         let index = self.map.get(&entity_id)?;
-        Some(self.vec[*index].inner())
+        let inner = self.vec[*index].as_ref()?.inner();
+        Some(inner)
     }
     pub fn get_mut(&mut self, entity_id: I) -> Option<&mut T> {
         let index = self.map.get(&entity_id)?;
-        Some(self.vec[*index].inner_mut())
+        let inner = self.vec[*index].as_mut()?.inner_mut();
+        Some(inner)
     }
     pub fn iter(&self) -> ComponentIter<I, T> {
         ComponentIter {
@@ -105,7 +107,7 @@ pub struct ComponentIter<'a, I, T>
 where
     T: 'a,
 {
-    iter: std::slice::Iter<'a, Component<I, T>>,
+    iter: std::slice::Iter<'a, Option<Component<I, T>>>,
 }
 impl<'a, I, T> Iterator for ComponentIter<'a, I, T>
 where
@@ -113,8 +115,11 @@ where
 {
     type Item = (I, &'a T);
     fn next(&mut self) -> Option<Self::Item> {
-        let next = self.iter.next()?;
-        Some((next.entity_id(), next.inner()))
+        loop {
+            if let Some(next) = self.iter.next()? {
+                return Some((next.entity_id(), next.inner()));
+            }
+        }
     }
 }
 impl<'a, I, T> ComponentIter<'a, I, T> {
@@ -140,7 +145,7 @@ pub struct ComponentIterMut<'a, I, T>
 where
     T: 'a,
 {
-    iter: std::slice::IterMut<'a, Component<I, T>>,
+    iter: std::slice::IterMut<'a, Option<Component<I, T>>>,
 }
 impl<'a, I, T> Iterator for ComponentIterMut<'a, I, T>
 where
@@ -148,8 +153,11 @@ where
 {
     type Item = (I, &'a mut T);
     fn next(&mut self) -> Option<Self::Item> {
-        let next = self.iter.next()?;
-        Some((next.entity_id(), next.inner_mut()))
+        loop {
+            if let Some(next) = self.iter.next()? {
+                return Some((next.entity_id(), next.inner_mut()));
+            }
+        }
     }
 }
 impl<'a, I, T> ComponentIterMut<'a, I, T> {
