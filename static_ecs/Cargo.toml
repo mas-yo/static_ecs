@@ -1,0 +1,10 @@
+[package]
+name = "static_ecs"
+version = "0.1.0"
+authors = ["Masahiro Yoshida <mypianoplayer@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+member_of_type = { path = "../member_of_type" }

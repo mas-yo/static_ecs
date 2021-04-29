@@ -1,21 +1,8 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-pub trait ID {
-    fn next(&self) -> Self;
-}
-
-// #[derive(Clone, Copy, Eq, PartialEq, Hash, Default)]
-// pub struct EntityID {
-//     id: u32,
-// }
-// impl EntityID {
-//     pub fn new() -> Self {
-//         Self { id: 0 }
-//     }
-//     pub fn next(&self) -> Self {
-//         Self { id: self.id + 1 }
-//     }
+// pub trait ID {
+//     fn next(&self) -> Self;
 // }
 
 pub struct Component<I, T> {
