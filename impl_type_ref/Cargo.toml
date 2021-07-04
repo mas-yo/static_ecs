@@ -1,5 +1,5 @@
 [package]
-name = "member_of_type"
+name = "impl_type_ref"
 version = "0.1.0"
 authors = ["Masahiro Yoshida <mypianoplayer@gmail.com>"]
 edition = "2018"
@@ -10,5 +10,7 @@ edition = "2018"
 proc-macro = true
 
 [dependencies]
+itertools = "0.10.1"
+#len-trait = "0.6.1"
 quote = "1.0"
-syn = { version = "1.0", features = ["full"] }
+syn = { version = "1.0", features = ["full", "extra-traits"] }

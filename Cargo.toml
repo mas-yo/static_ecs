@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "member_of_type",
+    "impl_type_ref",
     "static_ecs",
 ]

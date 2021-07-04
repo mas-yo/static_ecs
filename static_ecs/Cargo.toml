@@ -7,4 +7,4 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-member_of_type = { path = "../member_of_type" }
+impl_type_ref = { path = "../impl_type_ref" }

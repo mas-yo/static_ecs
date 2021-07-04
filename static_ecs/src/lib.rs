@@ -1,4 +1,4 @@
-use member_of_type::declare_member_of_type;
+use impl_type_ref::impl_type_ref;
 
 pub type EntityID = u32;
 
@@ -71,6 +71,35 @@ macro_rules! system {
     };
 }
 
+
+// this will work!
+// trait TypeRef<'a, U, R> where R: 'a {
+//     fn type_ref(&'a mut self) -> (&mut U, R);
+// }
+// type Tpl = (i32, u32, f32);
+
+// impl<'a> TypeRef<'a, i32, &'a u32> for Tpl {
+//     fn type_ref(&mut self) -> (&mut i32, &u32) {
+//         (&mut self.0, &self.1)
+//     }
+// }
+// impl<'a> TypeRef<'a, i32, (&'a u32, &'a f32)> for Tpl {
+//     fn type_ref(&mut self) -> (&mut i32, (&u32, &f32)) {
+//         (&mut self.0, (&self.1, &self.2))
+//     }
+// }
+
+// fn main() {
+//     let mut t = Tpl::default();
+//     {
+//         let test: (&mut i32, (&u32, &f32)) = t.type_ref();
+//     }
+//     {
+//         let test: (&mut i32, &u32) = t.type_ref();
+//     }
+
+// }
+
 mod component;
 
 #[cfg(test)]
@@ -80,19 +109,44 @@ mod tests {
     use crate::PushComponent;
     #[test]
     fn it_works() {
-        world!(World { i32, u32, f32 });
-        let mut w = World::default();
-        add_entity!(w; (1i32, 1u32, 1f32));
-        add_entity!(w; (2i32, 2u32, 2f32));
-        add_entity!(w; (3i32, 3u32, 3f32));
+
+        //TypeRef1, TypeRef2, ...TypeRef20
+        // pub trait TypeRef<M> {
+        //     fn type_ref(&mut self) -> &mut M;
+        // }
+        // pub trait MultiTypeRef<'a, M, R> {
+        //     fn multi_type_ref(&'a mut self) -> (&'a mut M, &R);
+        // }
+        trait TypeRef<'a, R> where R: 'a {
+            fn type_ref(&'a self) -> R;
+        }
+        trait TypeRefMut<'a, R> where R: 'a {
+            // fn type_ref(&'a self) -> R;
+            fn type_ref_mut(&'a mut self) -> R;
+        }
+        
+    
+        impl_type_ref::impl_type_ref!{(i32, f32, u32)};
+
+        let mut t = (1i32, 2f32, 3u32);
+        let ii : (&mut f32, &i32) = t.type_ref_mut();
+        *ii.0 = *ii.1 as f32;
+
+        // *ii = 10f32;
+
+        // world!(World { i32, u32, f32 });
+        // let mut w = World::default();
+        // add_entity!(w; (1i32, 1u32, 1f32));
+        // add_entity!(w; (2i32, 2u32, 2f32));
+        // add_entity!(w; (3i32, 3u32, 3f32));
 
 
-        system!(w, |eid, data1: &mut i32, data2: &u32, data3: &f32| {
-            println!("---{}", data1);
-            *data1 += *data2 as i32 + *data3 as i32;
-        });
-        system!(w, |eid, data: &mut i32| {
-            println!("---{}", data);
-        });
+        // system!(w, |eid, data1: &mut i32, data2: &u32, data3: &f32| {
+        //     println!("---{}", data1);
+        //     *data1 += *data2 as i32 + *data3 as i32;
+        // });
+        // system!(w, |eid, data: &mut i32| {
+        //     println!("---{}", data);
+        // });
    }
 }
