@@ -34,8 +34,6 @@ impl<I, T> Component<I, T> {
     }
 }
 
-pub type CContainer<I, T> = ComponentContainer<I, T>;
-
 // #[derive(Default)]
 pub struct ComponentContainer<I, T> {
     map: HashMap<I, usize>,
@@ -110,7 +108,7 @@ where
     }
 }
 impl<'a, I, T> ComponentIter<'a, I, T> {
-    pub fn zip_entity<U>(self, other: &'a CContainer<I, U>) -> ZipEntity<'a, I, T, U> {
+    pub fn zip_entity<U>(self, other: &'a ComponentContainer<I, U>) -> ZipEntity<'a, I, T, U> {
         ZipEntity {
             base: self,
             other: other,
@@ -118,8 +116,8 @@ impl<'a, I, T> ComponentIter<'a, I, T> {
     }
     pub fn zip_entity2<U, V>(
         self,
-        other1: &'a CContainer<I, U>,
-        other2: &'a CContainer<I, V>,
+        other1: &'a ComponentContainer<I, U>,
+        other2: &'a ComponentContainer<I, V>,
     ) -> ZipEntity2<'a, I, T, U, V> {
         ZipEntity2 {
             base: self,
@@ -148,7 +146,7 @@ where
     }
 }
 impl<'a, I, T> ComponentIterMut<'a, I, T> {
-    pub fn zip_entity<U>(self, other: &'a CContainer<I, U>) -> ZipEntityMut<'a, I, T, U> {
+    pub fn zip_entity<U>(self, other: &'a ComponentContainer<I, U>) -> ZipEntityMut<'a, I, T, U> {
         ZipEntityMut {
             base: self,
             other: other,
@@ -156,8 +154,8 @@ impl<'a, I, T> ComponentIterMut<'a, I, T> {
     }
     pub fn zip_entity2<U, V>(
         self,
-        other1: &'a CContainer<I, U>,
-        other2: &'a CContainer<I, V>,
+        other1: &'a ComponentContainer<I, U>,
+        other2: &'a ComponentContainer<I, V>,
     ) -> ZipEntity2Mut<'a, I, T, U, V> {
         ZipEntity2Mut {
             base: self,
@@ -168,9 +166,9 @@ impl<'a, I, T> ComponentIterMut<'a, I, T> {
 
     pub fn zip_entity3<U, V, W>(
         self,
-        other1: &'a CContainer<I, U>,
-        other2: &'a CContainer<I, V>,
-        other3: &'a CContainer<I, W>,
+        other1: &'a ComponentContainer<I, U>,
+        other2: &'a ComponentContainer<I, V>,
+        other3: &'a ComponentContainer<I, W>,
     ) -> ZipEntity3Mut<'a, I, T, U, V, W> {
         ZipEntity3Mut {
             base: self,
@@ -187,7 +185,7 @@ where
     U: 'a,
 {
     base: ComponentIter<'a, I, T>,
-    other: &'a CContainer<I, U>,
+    other: &'a ComponentContainer<I, U>,
 }
 
 impl<'a, I, T, U> Iterator for ZipEntity<'a, I, T, U>
@@ -211,7 +209,7 @@ where
     U: 'a,
 {
     base: ComponentIterMut<'a, I, T>,
-    other: &'a CContainer<I, U>,
+    other: &'a ComponentContainer<I, U>,
 }
 
 impl<'a, I, T, U> Iterator for ZipEntityMut<'a, I, T, U>
@@ -235,8 +233,8 @@ where
     V: 'a,
 {
     base: ComponentIter<'a, I, T>,
-    other1: &'a CContainer<I, U>,
-    other2: &'a CContainer<I, V>,
+    other1: &'a ComponentContainer<I, U>,
+    other2: &'a ComponentContainer<I, V>,
 }
 
 impl<'a, I, T, U, V> Iterator for ZipEntity2<'a, I, T, U, V>
@@ -263,8 +261,8 @@ where
     V: 'a,
 {
     base: ComponentIterMut<'a, I, T>,
-    other1: &'a CContainer<I, U>,
-    other2: &'a CContainer<I, V>,
+    other1: &'a ComponentContainer<I, U>,
+    other2: &'a ComponentContainer<I, V>,
 }
 
 impl<'a, I, T, U, V> Iterator for ZipEntity2Mut<'a, I, T, U, V>
@@ -292,9 +290,9 @@ where
     W: 'a,
 {
     base: ComponentIterMut<'a, I, T>,
-    other1: &'a CContainer<I, U>,
-    other2: &'a CContainer<I, V>,
-    other3: &'a CContainer<I, W>,
+    other1: &'a ComponentContainer<I, U>,
+    other2: &'a ComponentContainer<I, V>,
+    other3: &'a ComponentContainer<I, W>,
 }
 
 impl<'a, I, T, U, V, W> Iterator for ZipEntity3Mut<'a, I, T, U, V, W>
