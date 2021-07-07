@@ -1,13 +1,19 @@
-use impl_type_ref::impl_type_ref;
 use crate::component::*;
+use impl_type_ref::impl_type_ref;
 
 pub type EntityID = u32;
 pub type CContainer<T> = ComponentContainer<EntityID, T>;
 
-pub trait TypeRef<'a, R> where R: 'a {
+pub trait TypeRef<'a, R>
+where
+    R: 'a,
+{
     fn type_ref(&'a self) -> R;
 }
-pub trait TypeRefMut<'a, R> where R: 'a {
+pub trait TypeRefMut<'a, R>
+where
+    R: 'a,
+{
     fn type_ref_mut(&'a mut self) -> R;
 }
 
@@ -67,34 +73,36 @@ macro_rules! add_entity {
     };
 }
 
-pub fn system0<T, P>(t: &mut CContainer<T>, pred: P) where P: Fn(EntityID, &mut T) {
+pub fn system0<T, P>(t: &mut CContainer<T>, pred: P)
+where
+    P: Fn(EntityID, &mut T),
+{
     for (eid, d) in t.iter_mut() {
         pred(eid, d);
     }
 }
 pub fn system1<T1, T2, P>(tpl: (&mut CContainer<T1>, &CContainer<T2>), pred: P)
-where P: Fn(EntityID, &mut T1, &T2) 
- {
+where
+    P: Fn(EntityID, &mut T1, &T2),
+{
     for (eid, d1, d2) in tpl.0.iter_mut().zip_entity(tpl.1) {
         pred(eid, d1, d2);
     }
 }
 
-
 mod component;
 
 #[cfg(test)]
 mod tests {
-    use impl_type_ref;
     use crate::component::*;
-    use crate::TypeRef;
-    use crate::TypeRefMut;
+    use crate::system1;
     use crate::CContainer;
     use crate::PushComponent;
-    use crate::system1;
+    use crate::TypeRef;
+    use crate::TypeRefMut;
+    use impl_type_ref;
     #[test]
     fn it_works() {
-        
         world!(World { i32, f32, u32 });
         let mut w = World::default();
 
@@ -103,14 +111,14 @@ mod tests {
 
         // let (c1, c2) = w.components.type_ref_mut();
 
-        system1(w.components.type_ref_mut(), |entity_id, d1: &mut i32, d2: &u32| {
-            *d1 += *d2 as i32
-        });
+        system1(
+            w.components.type_ref_mut(),
+            |entity_id, d1: &mut i32, d2: &u32| *d1 += *d2 as i32,
+        );
 
         let ci32: (&CContainer<i32>) = w.components.type_ref();
         for i in ci32.iter() {
             println!("{}", i.1);
         }
-    
-   }
+    }
 }
