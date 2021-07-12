@@ -18,17 +18,23 @@ fn permutations(types: Vec<syn::Type>) -> Vec<Vec<syn::Type>> {
     permutations
 }
 
-struct ImplTypeRef {
-    tuple: syn::TypeTuple,
-}
+// struct ImplTypeRef {
+//     ident: syn::Ident,
+//     tuple: syn::TypeTuple,
+// }
 
-impl Parse for ImplTypeRef {
-    fn parse(input: ParseStream) -> Result<Self> {
-        Ok(ImplTypeRef {
-            tuple: input.parse()?,
-        })
-    }
-}
+// impl Parse for ImplTypeRef {
+//     fn parse(input: ParseStream) -> Result<Self> {
+//         input.parse::<Token![struct]>()?;
+//         let id = input.parse::<syn::Ident>()?;
+//         let tpl = input.parse::<syn::TypeTuple>()?;
+//         input.parse::<Token![;]>();
+//         Ok(ImplTypeRef {
+//             ident: id,
+//             tuple: tpl,
+//         })
+//     }
+// }
 
 struct TypeAndIndex {
     typ: syn::Type,
@@ -43,13 +49,40 @@ impl TypeAndIndex {
     }
 }
 
-#[proc_macro]
-pub fn impl_type_ref(input: TokenStream) -> TokenStream {
-    let parsed = parse_macro_input!(input as ImplTypeRef);
+#[proc_macro_derive(World, attributes(components))]
+pub fn derive_world(input: TokenStream) -> TokenStream {
+    let parsed = parse_macro_input!(input as syn::ItemStruct); //ImplTypeRef);
 
-    let target = &parsed.tuple;
-    let type_and_index: Vec<TypeAndIndex> = parsed
-        .tuple
+    // let parsed = dbg!(parsed);
+
+    let target = &parsed.ident;
+
+    let mut tuple = None::<syn::TypeTuple>;
+    let mut tuple_ident = None::<syn::Ident>;
+    if let syn::Fields::Named(fields) = parsed.fields {
+        for f in fields.named {
+            if f.attrs.iter().any(|a| a.path.segments.iter().any(|s|s.ident == "components")) {
+                match f.ty {
+                    syn::Type::Tuple(tpl) => {
+                        tuple_ident = f.ident;
+                        tuple = Some(tpl);
+                    },
+                    _ => {
+                        panic!("components must be a Tuple")
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    if tuple.is_none() {
+        return TokenStream::new();
+    }
+    let tuple = tuple.unwrap();
+    let tuple_ident = tuple_ident.unwrap();
+
+    let type_and_index: Vec<TypeAndIndex> = tuple
         .elems
         .iter()
         .enumerate()
@@ -65,13 +98,13 @@ pub fn impl_type_ref(input: TokenStream) -> TokenStream {
     };
 
     let mut ts = quote::__private::TokenStream::new();
-    let types: Vec<syn::Type> = parsed.tuple.elems.iter().map(|x| (*x).clone()).collect();
+    let types: Vec<syn::Type> = tuple.elems.iter().map(|x| (*x).clone()).collect();
     let perms = permutations(types);
     for perm in &perms {
         let typ = perm.iter();
         let idx = perm.iter().map(|x| get_index(x));
         let ref_types = quote! { ( #( &'a #typ ),* ) };
-        let ref_index = quote! { ( #( & self. #idx ),* ) };
+        let ref_index = quote! { ( #( & self. #tuple_ident . #idx ),* ) };
 
         let ref_mut1 = perm.iter().enumerate().map(|(idx, x)| {
             if idx == 0 {
@@ -90,16 +123,16 @@ pub fn impl_type_ref(input: TokenStream) -> TokenStream {
         let typ = perm.iter();
         let idx = perm.iter().map(|x| get_index(x));
         let ref_mut_types = quote! { ( #( #ref_mut1 #typ ),* ) };
-        let ref_mut_index = quote! { ( #( #ref_mut2 self. #idx ),* ) };
+        let ref_mut_index = quote! { ( #( #ref_mut2 self. #tuple_ident . #idx ),* ) };
 
         let impls = quote! {
-            impl<'a> TypeRef<'a, #ref_types> for #target {
-                fn type_ref(&'a self) -> #ref_types {
+            impl<'a> GetComponent<'a, #ref_types> for #target {
+                fn get_component(&'a self) -> #ref_types {
                     #ref_index
                 }
             }
-            impl<'a> TypeRefMut<'a, #ref_mut_types> for #target {
-                fn type_ref_mut(&'a mut self) -> #ref_mut_types {
+            impl<'a> GetComponentMut<'a, #ref_mut_types> for #target {
+                fn get_component_mut(&'a mut self) -> #ref_mut_types {
                     #ref_mut_index
                 }
             }

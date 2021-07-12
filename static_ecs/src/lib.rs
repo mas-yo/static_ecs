@@ -1,24 +1,27 @@
-use crate::component::*;
-use impl_type_ref::impl_type_ref;
+
+mod component;
+use component::*;
+
+pub use derive_world::*;
 
 pub type EntityID = u32;
 pub type CContainer<T> = ComponentContainer<EntityID, T>;
 
-pub trait TypeRef<'a, R>
-where
-    R: 'a,
-{
-    fn type_ref(&'a self) -> R;
-}
-pub trait TypeRefMut<'a, R>
-where
-    R: 'a,
-{
-    fn type_ref_mut(&'a mut self) -> R;
-}
+// pub trait TypeRef<'a, R>
+// where
+//     R: 'a,
+// {
+//     fn type_ref(&'a self) -> R;
+// }
+// pub trait TypeRefMut<'a, R>
+// where
+//     R: 'a,
+// {
+//     fn type_ref_mut(&'a mut self) -> R;
+// }
 
 pub trait PushComponent<C> {
-    fn push_component(&mut self, component: C);
+    fn push_component(&mut self, entity_id: EntityID, component: C);
 }
 pub trait RemoveComponent {
     fn remove_component(&mut self, entity_id: EntityID);
@@ -37,102 +40,116 @@ where
     fn get_component_mut(&'a mut self) -> R;
 }
 
-#[derive(Default)]
-struct World<CC> {
-    next_entity_id: EntityID,
-    components: CC,
-}
+// #[derive(Default)]
+// pub struct World<CC> {
+//     next_entity_id: EntityID,
+//     components: CC,
+// }
 
-impl<'a, R, CC> GetComponent<'a, R> for World<CC>
-where
-    R: 'a,
-    CC: TypeRef<'a, R>,
-{
-    fn get_component(&'a self) -> R {
-        self.components.type_ref()
-    }
-}
-impl<'a, R, CC> GetComponentMut<'a, R> for World<CC>
-where
-    R: 'a,
-    CC: TypeRefMut<'a, R>,
-{
-    fn get_component_mut(&'a mut self) -> R {
-        self.components.type_ref_mut()
-    }
-}
-// impl<CC, C> PushComponent<C> for World<CC>
+// impl<'a, R, CC> GetComponent<'a, R> for World<CC>
 // where
-//     CC: TypeRefMut<'a, (&mut CContainer<EntityID, C>)>,
+//     R: 'a,
+//     CC: TypeRef<'a, R>,
 // {
-//     fn push_component(&mut self, component: C) {
-//         let mut comps: (&mut CContainer<EntityID, C>) = self.components.type_ref_mut();
-//         comps.push(self.next_entity_id, component);
+//     fn get_component(&'a self) -> R {
+//         self.components.type_ref()
+//     }
+// }
+// impl<'a, R, CC> GetComponentMut<'a, R> for World<CC>
+// where
+//     R: 'a,
+//     CC: TypeRefMut<'a, R>,
+// {
+//     fn get_component_mut(&'a mut self) -> R {
+//         self.components.type_ref_mut()
+//     }
+// }
+// // impl<CC, C> PushComponent<C> for World<CC>
+// // where
+// //     CC: TypeRefMut<'a, (&mut CContainer<EntityID, C>)>,
+// // {
+// //     fn push_component(&mut self, component: C) {
+// //         let mut comps: (&mut CContainer<EntityID, C>) = self.components.type_ref_mut();
+// //         comps.push(self.next_entity_id, component);
+// //     }
+// // }
+
+// #[macro_export]
+// macro_rules! world {
+//     ( $type_name:ident { $($t:ident),+ $(,)? } ) => {
+
+//         use static_ecs::{EntityID,CContainer};
+//         use static_ecs::{PushComponent,RemoveComponent};
+
+//         //add next_entity_id
+//         #[derive(TypeRef,Default)]
+//         struct $type_name( $(CContainer<$t>),+ );
+
+//         $(
+//             impl crate::PushComponent<$t> for $type_name {
+//                 fn push_component(&mut self, entity_id: EntityID, component: $t) {
+//                     let (comp): (&mut CContainer<$t>) = self.type_ref_mut();
+//                     comp.push(entity_id, component);
+//                 }
+//             }
+//         )+
+//         impl crate::RemoveComponent for $type_name {
+//             fn remove_component(&mut self, entity_id: crate::EntityID) {
+//                 $(
+//                     let (comp): (&mut CContainer<$t>) = self.type_ref_mut();
+//                     comp.remove(entity_id);
+//                 )+
+//             }
+//         }
+//         //impl GetComponent,GetComponentMut
+//         impl<'a, R> GetComponent<'a, R> for $type_name
+//         where
+//             R: 'a,
+//         {
+//             fn get_component(&'a self) -> R {
+//                 self.type_ref()
+//             }
+//         }
+// };
+// }
+
+// macro_rules! add_entity {
+//     ( $i:expr; ( $($e:expr),+ )) => {
+//         $(
+//             $i.push_component($e);
+//         )+
+//         $i.next_entity_id += 1;// $i.0.next();
+//     };
+// }
+
+// pub fn system0<T, P>(container: &mut CContainer<T>, pred: P)
+// where
+//     P: Fn(EntityID, &mut T),
+// {
+//     for (eid, d) in container.iter_mut() {
+//         pred(eid, d);
+//     }
+// }
+// pub fn system1<T1, T2, P>(container: (&mut CContainer<T1>, &CContainer<T2>), pred: P)
+// where
+//     P: Fn(EntityID, &mut T1, &T2),
+// {
+//     for (eid, d1, d2) in container.0.iter_mut().zip_entity(container.1) {
+//         pred(eid, d1, d2);
+//     }
+// }
+// pub fn system2<T1, T2, T3, P>(
+//     container: (&mut CContainer<T1>, &CContainer<T2>, &CContainer<T3>),
+//     pred: P,
+// ) where
+//     P: Fn(EntityID, &mut T1, &T2, &T3),
+// {
+//     for (eid, d1, d2, d3) in container.0.iter_mut().zip_entity2(container.1, container.2) {
+//         pred(eid, d1, d2, d3);
 //     }
 // }
 
-macro_rules! world {
-    ( $type_name:ident { $($t:ident),+ $(,)? } ) => {
-        type ComponentContainerTuple = ($(CContainer<$t>),+);
-        impl_type_ref::impl_type_ref!{($(CContainer<$t>),+)};
-
-        type $type_name = crate::World<ComponentContainerTuple>;
-        $(
-            impl crate::PushComponent<$t> for $type_name {
-                fn push_component(&mut self, component: $t) {
-                    let (comp): (&mut CContainer<$t>) = self.components.type_ref_mut();
-                    comp.push(self.next_entity_id, component);
-                }
-            }
-        )+
-        impl crate::RemoveComponent for $type_name {
-            fn remove_component(&mut self, entity_id: crate::EntityID) {
-                $(
-                    let (comp): (&mut CContainer<$t>) = self.components.type_ref_mut();
-                    comp.remove(entity_id);
-                )+
-            }
-        }
-    };
-}
-
-macro_rules! add_entity {
-    ( $i:expr; ( $($e:expr),+ )) => {
-        $(
-            $i.push_component($e);
-        )+
-        $i.next_entity_id += 1;// $i.0.next();
-    };
-}
-
-pub fn system0<T, P>(container: &mut CContainer<T>, pred: P)
-where
-    P: Fn(EntityID, &mut T),
-{
-    for (eid, d) in container.iter_mut() {
-        pred(eid, d);
-    }
-}
-pub fn system1<T1, T2, P>(container: (&mut CContainer<T1>, &CContainer<T2>), pred: P)
-where
-    P: Fn(EntityID, &mut T1, &T2),
-{
-    for (eid, d1, d2) in container.0.iter_mut().zip_entity(container.1) {
-        pred(eid, d1, d2);
-    }
-}
-pub fn system2<T1, T2, T3, P>(
-    container: (&mut CContainer<T1>, &CContainer<T2>, &CContainer<T3>),
-    pred: P,
-) where
-    P: Fn(EntityID, &mut T1, &T2, &T3),
-{
-    for (eid, d1, d2, d3) in container.0.iter_mut().zip_entity2(container.1, container.2) {
-        pred(eid, d1, d2, d3);
-    }
-}
-
-mod component;
+// mod component;
 
 #[cfg(test)]
 mod tests {

@@ -1,5 +1,5 @@
 [package]
-name = "impl_type_ref"
+name = "derive_world"
 version = "0.1.0"
 authors = ["Masahiro Yoshida <mypianoplayer@gmail.com>"]
 edition = "2018"
