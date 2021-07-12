@@ -61,12 +61,15 @@ pub fn derive_world(input: TokenStream) -> TokenStream {
     let mut tuple_ident = None::<syn::Ident>;
     if let syn::Fields::Named(fields) = parsed.fields {
         for f in fields.named {
-            if f.attrs.iter().any(|a| a.path.segments.iter().any(|s|s.ident == "components")) {
+            if f.attrs
+                .iter()
+                .any(|a| a.path.segments.iter().any(|s| s.ident == "components"))
+            {
                 match f.ty {
                     syn::Type::Tuple(tpl) => {
                         tuple_ident = f.ident;
                         tuple = Some(tpl);
-                    },
+                    }
                     _ => {
                         panic!("components must be a Tuple")
                     }
