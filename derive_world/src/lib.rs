@@ -143,6 +143,22 @@ pub fn derive_world(input: TokenStream) -> TokenStream {
         ts.extend(impls);
     }
 
-    // println!("-------¥n {}", ts.to_string());
+    {
+        let typ = tuple.elems.iter();
+
+        let impls = quote! {
+            macro_rules! for_each_component {
+                ($w:expr, $b:tt) => {
+                    #(
+                        let c:(&mut #typ) = $w.get_component_mut();
+                        $b(c);
+                    )*
+                }
+            }
+        };
+        ts.extend(impls);
+    }
+
+    println!("-------¥n {}", ts.to_string());
     ts.into()
 }

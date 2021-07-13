@@ -19,12 +19,12 @@ pub type CContainer<T> = ComponentContainer<EntityID, T>;
 //     fn type_ref_mut(&'a mut self) -> R;
 // }
 
-pub trait PushComponent<C> {
-    fn push_component(&mut self, entity_id: EntityID, component: C);
-}
-pub trait RemoveComponent {
-    fn remove_component(&mut self, entity_id: EntityID);
-}
+// pub trait PushComponent<C> {
+//     fn push_component(&mut self, entity_id: EntityID, component: C);
+// }
+// pub trait RemoveComponent {
+//     fn remove_component(&mut self, entity_id: EntityID);
+// }
 
 pub trait GetComponent<'a, R>
 where
